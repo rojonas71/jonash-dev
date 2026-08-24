@@ -40,7 +40,7 @@ export default function AdminProjectDetails() {
     setFeatures((featuresResult.data ?? []) as ProjectFeature[])
     setImages((imagesResult.data ?? []) as ProjectImage[])
     setTechnologies((technologiesResult.data ?? []) as Technology[])
-    setLinkedTechnologies((linkedResult.data ?? []) as ProjectTechnologyRow[])
+    setLinkedTechnologies((linkedResult.data ?? []) as unknown as ProjectTechnologyRow[])
   }
 
   useEffect(() => { loadAll() }, [id])

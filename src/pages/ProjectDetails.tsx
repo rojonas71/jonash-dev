@@ -29,7 +29,7 @@ export default function ProjectDetails() {
       ])
       setImages((imageRows ?? []) as ProjectImage[])
       setFeatures((featureRows ?? []) as ProjectFeature[])
-      setTechnologies(((techRows ?? []) as Relation[]).flatMap(row => row.technologies ? [row.technologies] : []))
+      setTechnologies(((techRows ?? []) as unknown as Relation[]).flatMap(row => row.technologies ? [row.technologies] : []))
       setLoading(false)
     }
     load()
