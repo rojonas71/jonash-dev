@@ -1,0 +1,1 @@
+import { Link } from 'react-router-dom'; export default function NotFound(){return <section className="not-found"><div><span>404</span><h1>Parece que essa rota ainda não foi programada. 👨‍💻</h1><Link className="primary-btn" to="/">Voltar para Jonash.dev</Link></div></section>}
