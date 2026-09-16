@@ -1,0 +1,9 @@
+{
+  "name":"Jonash.dev",
+  "short_name":"Jonash.dev",
+  "start_url":"/",
+  "display":"standalone",
+  "background_color":"#06101d",
+  "theme_color":"#06101d",
+  "description":"Tecnologia • IA • Projetos"
+}

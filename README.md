@@ -1,73 +1,43 @@
-# Jonash.dev — Sistema Completo
+# Jonash.dev v2.0
 
-Portfólio + CMS administrativo construído com React, TypeScript, Vite e Supabase.
+Portfólio/CMS profissional de Jonas Henrique — **Tecnologia • IA • Projetos**.
 
-## Recursos
+## Stack
+- React 18 + TypeScript + Vite
+- React Router
+- Supabase Auth + PostgreSQL + Storage + RLS
+- Lucide React
+- Netlify/Vercel
 
-- Home premium e responsiva
-- Sobre, Projetos, Tecnologias, Jornada, Estudos, Certificados, Conteúdos, Galeria, Serviços e Contato
-- Página individual de projeto e conteúdo
-- Filtros de projetos
-- Formulário de contato persistido no Supabase
-- Login administrativo por e-mail/senha
-- Dashboard privado protegido
-- CRUD de projetos, tecnologias, jornada, estudos, certificados, conteúdos, galeria, serviços e redes sociais
-- Gerenciamento de funcionalidades, tecnologias e screenshots por projeto
-- Mensagens recebidas no painel
-- Configurações globais
-- RLS em todas as tabelas sensíveis
-- Storage separado por tipo de mídia
-- Logs administrativos
-- robots.txt e sitemap.xml
-- 404 personalizada e estados vazios
+## Estrutura
+`src/` frontend, `supabase/schema.sql` banco/RLS, `public/` SEO/PWA, `netlify.toml` deploy.
 
-## 1. Instalação
+## Configuração
+1. Copie `.env.example` para `.env.local`.
+2. Preencha `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
+3. No Supabase, execute `supabase/schema.sql`.
+4. Crie o usuário administrador em **Authentication → Users**.
+5. Use o UUID desse usuário em `public.profiles` com `role = 'admin'`.
+6. Rode `npm install` e `npm run dev`.
 
+## Build
 ```bash
 npm install
-cp .env.example .env
-npm run dev
+npm run build
 ```
 
-No Windows, crie manualmente `.env` se o comando `cp` não funcionar.
+## Netlify
+Build command: `npm run build`
+Publish directory: `dist`
 
-## 2. Variáveis
+Variáveis: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
 
-```env
-VITE_SUPABASE_URL=https://SEU-PROJETO.supabase.co
-VITE_SUPABASE_ANON_KEY=SUA_ANON_KEY
-```
+O `netlify.toml` já contém o redirect SPA.
 
-Nunca coloque `service_role` no frontend.
+## Admin
+`/admin/login` → autenticação Supabase.
 
-## 3. Banco
+Não coloque service-role keys ou outros segredos no frontend.
 
-Abra Supabase > SQL Editor e execute `supabase/schema.sql`.
-
-Recomendado: execute primeiro em um projeto novo ou de teste. Se sua base anterior já possui policies com os mesmos nomes, remova-as antes ou migre de forma incremental.
-
-## 4. Administrador
-
-1. Supabase > Authentication > Users > Add user.
-2. Copie o UUID do usuário.
-3. Execute:
-
-```sql
-insert into public.profiles(id, full_name, display_name, role)
-values ('UUID_DO_USUARIO', 'Jonas Henrique', 'Jonas', 'admin')
-on conflict(id) do update set role='admin';
-```
-
-4. Acesse `/admin/login`.
-
-## 5. Projetos
-
-No painel, crie o projeto em `/admin/projetos`. Depois abra o gerenciador de conteúdo do projeto para adicionar funcionalidades, tecnologias e screenshots.
-
-## 6. Deploy
-
-Compatível com Netlify/Vercel. Configure as duas variáveis `VITE_...` no ambiente de produção. Para SPA, garanta rewrite de todas as rotas para `index.html`.
-
-## Segurança
-
-O bloqueio visual de `/admin` não é a proteção principal. As operações de banco e storage são protegidas por RLS e pela função `is_admin()`.
+## Regra de conteúdo
+Cadastre somente experiências, estudos, certificados, projetos e informações reais. O painel foi pensado para permitir atualização contínua sem editar o código.
