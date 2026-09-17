@@ -1,0 +1,887 @@
+/* =========================================================
+   JONASH.DEV — ADMIN SERVICES
+   Premium Dark UI
+   ========================================================= */
+
+.admin-services {
+  min-height: 100vh;
+  padding: 32px;
+  color: var(--text);
+  background:
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--primary) 8%, transparent),
+      transparent 35%
+    ),
+    var(--background);
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.admin-services__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.admin-services__title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.admin-services__icon {
+  width: 52px;
+  height: 52px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 16px;
+
+  color: var(--primary);
+
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary) 18%, transparent),
+      color-mix(in srgb, var(--secondary) 10%, transparent)
+    );
+
+  border: 1px solid
+    color-mix(in srgb, var(--primary) 25%, transparent);
+
+  box-shadow:
+    0 0 30px
+    color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+.admin-services__title {
+  margin: 0;
+
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.admin-services__subtitle {
+  margin: 5px 0 0;
+
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+.admin-services__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-services__button {
+  min-height: 42px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 0 16px;
+
+  border-radius: 12px;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  border: 1px solid var(--border);
+
+  background: var(--card);
+  color: var(--text);
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.admin-services__button:hover {
+  transform: translateY(-1px);
+
+  border-color:
+    color-mix(in srgb, var(--primary) 45%, var(--border));
+
+  background:
+    color-mix(in srgb, var(--primary) 5%, var(--card));
+}
+
+.admin-services__button--primary {
+  border-color: var(--primary);
+
+  background: var(--primary);
+
+  color: #000;
+
+  box-shadow:
+    0 0 25px
+    color-mix(in srgb, var(--primary) 15%, transparent);
+}
+
+.admin-services__button--primary:hover {
+  background:
+    color-mix(in srgb, var(--primary) 90%, white);
+}
+
+/* =========================================================
+   SEARCH
+   ========================================================= */
+
+.admin-services__search {
+  position: relative;
+
+  margin-bottom: 22px;
+}
+
+.admin-services__search-icon {
+  position: absolute;
+
+  left: 16px;
+  top: 50%;
+
+  width: 18px;
+  height: 18px;
+
+  transform: translateY(-50%);
+
+  color: var(--text-secondary);
+}
+
+.admin-services__search input {
+  width: 100%;
+
+  height: 48px;
+
+  padding: 0 16px 0 46px;
+
+  border-radius: 14px;
+
+  border: 1px solid var(--border);
+
+  background:
+    color-mix(in srgb, var(--card) 92%, transparent);
+
+  color: var(--text);
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.admin-services__search input::placeholder {
+  color: var(--text-secondary);
+}
+
+.admin-services__search input:focus {
+  border-color: var(--primary);
+
+  box-shadow:
+    0 0 0 3px
+    color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+/* =========================================================
+   ALERTS
+   ========================================================= */
+
+.admin-services__alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  margin-bottom: 20px;
+  padding: 14px 16px;
+
+  border-radius: 14px;
+
+  font-size: 14px;
+}
+
+.admin-services__alert--error {
+  border: 1px solid rgba(239, 68, 68, 0.25);
+
+  background: rgba(239, 68, 68, 0.08);
+
+  color: #f87171;
+}
+
+.admin-services__alert--success {
+  border: 1px solid rgba(34, 197, 94, 0.25);
+
+  background: rgba(34, 197, 94, 0.08);
+
+  color: #4ade80;
+}
+
+/* =========================================================
+   SERVICE LIST
+   ========================================================= */
+
+.admin-services__list {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-services__card {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  gap: 18px;
+
+  padding: 20px;
+
+  border-radius: 18px;
+
+  border: 1px solid var(--border);
+
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--card) 96%, transparent),
+      color-mix(in srgb, var(--background) 30%, var(--card))
+    );
+
+  box-shadow:
+    0 10px 35px rgba(0, 0, 0, 0.12);
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.admin-services__card:hover {
+  transform: translateY(-2px);
+
+  border-color:
+    color-mix(in srgb, var(--primary) 30%, var(--border));
+
+  box-shadow:
+    0 15px 45px rgba(0, 0, 0, 0.18);
+}
+
+/* =========================================================
+   SERVICE ICON
+   ========================================================= */
+
+.admin-services__service-icon {
+  width: 58px;
+  height: 58px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 16px;
+
+  color: var(--primary);
+
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--primary) 14%, transparent),
+      color-mix(in srgb, var(--secondary) 8%, transparent)
+    );
+
+  border: 1px solid
+    color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.admin-services__service-icon svg {
+  width: 25px;
+  height: 25px;
+}
+
+/* =========================================================
+   SERVICE CONTENT
+   ========================================================= */
+
+.admin-services__content {
+  min-width: 0;
+
+  flex: 1;
+}
+
+.admin-services__service-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  margin: 0;
+
+  font-size: 17px;
+  font-weight: 750;
+}
+
+.admin-services__description {
+  margin: 6px 0 0;
+
+  max-width: 760px;
+
+  color: var(--text-secondary);
+
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* =========================================================
+   BADGES
+   ========================================================= */
+
+.admin-services__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  padding: 4px 9px;
+
+  border-radius: 999px;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.admin-services__badge--category {
+  border: 1px solid var(--border);
+
+  color: var(--text-secondary);
+
+  background: var(--background);
+}
+
+.admin-services__badge--published {
+  background: rgba(34, 197, 94, 0.1);
+
+  color: #4ade80;
+}
+
+.admin-services__badge--hidden {
+  background: rgba(113, 113, 122, 0.1);
+
+  color: #a1a1aa;
+}
+
+.admin-services__badge--featured {
+  background: rgba(234, 179, 8, 0.1);
+
+  color: #facc15;
+}
+
+/* =========================================================
+   SERVICE META
+   ========================================================= */
+
+.admin-services__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  gap: 8px;
+
+  margin-top: 10px;
+}
+
+/* =========================================================
+   SERVICE ACTIONS
+   ========================================================= */
+
+.admin-services__service-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.admin-services__icon-button {
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 11px;
+
+  border: 1px solid var(--border);
+
+  background: transparent;
+
+  color: var(--text-secondary);
+
+  cursor: pointer;
+
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.admin-services__icon-button:hover {
+  transform: translateY(-1px);
+
+  color: var(--primary);
+
+  border-color:
+    color-mix(in srgb, var(--primary) 40%, var(--border));
+
+  background:
+    color-mix(in srgb, var(--primary) 6%, transparent);
+}
+
+.admin-services__icon-button--danger:hover {
+  color: #f87171;
+
+  border-color: rgba(239, 68, 68, 0.35);
+
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+.admin-services__overlay {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 999;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+
+  overflow-y: auto;
+
+  padding: 30px 18px;
+
+  background: rgba(0, 0, 0, 0.72);
+
+  backdrop-filter: blur(12px);
+}
+
+.admin-services__modal {
+  width: 100%;
+  max-width: 920px;
+
+  margin: auto;
+
+  overflow: hidden;
+
+  border-radius: 24px;
+
+  border: 1px solid var(--border);
+
+  background: var(--background);
+
+  box-shadow:
+    0 30px 100px rgba(0, 0, 0, 0.5);
+
+  animation: admin-services-modal-in 0.22s ease;
+}
+
+@keyframes admin-services-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(15px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* =========================================================
+   MODAL HEADER
+   ========================================================= */
+
+.admin-services__modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 22px 24px;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-services__modal-title {
+  margin: 0;
+
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.admin-services__modal-description {
+  margin: 4px 0 0;
+
+  color: var(--text-secondary);
+
+  font-size: 13px;
+}
+
+/* =========================================================
+   FORM
+   ========================================================= */
+
+.admin-services__form {
+  padding: 24px;
+}
+
+.admin-services__section {
+  margin-bottom: 30px;
+}
+
+.admin-services__section-title {
+  margin-bottom: 14px;
+
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.admin-services__grid {
+  display: grid;
+
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 16px;
+}
+
+.admin-services__field {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+.admin-services__field--full {
+  grid-column: 1 / -1;
+}
+
+.admin-services__label {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.admin-services__input,
+.admin-services__textarea,
+.admin-services__select {
+  width: 100%;
+
+  border-radius: 12px;
+
+  border: 1px solid var(--border);
+
+  background: var(--card);
+
+  color: var(--text);
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.admin-services__input,
+.admin-services__select {
+  min-height: 44px;
+
+  padding: 0 13px;
+}
+
+.admin-services__textarea {
+  min-height: 130px;
+
+  padding: 13px;
+
+  resize: vertical;
+}
+
+.admin-services__input::placeholder,
+.admin-services__textarea::placeholder {
+  color: var(--text-secondary);
+}
+
+.admin-services__input:focus,
+.admin-services__textarea:focus,
+.admin-services__select:focus {
+  border-color: var(--primary);
+
+  box-shadow:
+    0 0 0 3px
+    color-mix(in srgb, var(--primary) 9%, transparent);
+}
+
+.admin-services__hint {
+  color: var(--text-secondary);
+
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   CHECKBOX
+   ========================================================= */
+
+.admin-services__checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  min-height: 50px;
+
+  padding: 12px 14px;
+
+  border-radius: 12px;
+
+  border: 1px solid var(--border);
+
+  background: var(--card);
+
+  cursor: pointer;
+}
+
+.admin-services__checkbox input {
+  width: 17px;
+  height: 17px;
+
+  accent-color: var(--primary);
+}
+
+.admin-services__checkbox-title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-services__checkbox-description {
+  margin-top: 2px;
+
+  color: var(--text-secondary);
+
+  font-size: 11px;
+}
+
+/* =========================================================
+   MODAL FOOTER
+   ========================================================= */
+
+.admin-services__form-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+
+  padding-top: 22px;
+
+  border-top: 1px solid var(--border);
+}
+
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
+
+.admin-services__empty {
+  padding: 70px 30px;
+
+  text-align: center;
+
+  border-radius: 20px;
+
+  border: 1px dashed var(--border);
+
+  background:
+    color-mix(in srgb, var(--card) 65%, transparent);
+}
+
+.admin-services__empty-icon {
+  width: 50px;
+  height: 50px;
+
+  margin: 0 auto 14px;
+
+  color: var(--text-secondary);
+}
+
+.admin-services__empty-title {
+  margin: 0;
+
+  font-size: 17px;
+  font-weight: 750;
+}
+
+.admin-services__empty-description {
+  margin: 6px 0 20px;
+
+  color: var(--text-secondary);
+
+  font-size: 13px;
+}
+
+/* =========================================================
+   LOADING
+   ========================================================= */
+
+.admin-services__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 300px;
+
+  color: var(--primary);
+}
+
+.admin-services__spinner {
+  width: 30px;
+  height: 30px;
+
+  border: 3px solid
+    color-mix(in srgb, var(--primary) 20%, transparent);
+
+  border-top-color: var(--primary);
+
+  border-radius: 50%;
+
+  animation: admin-services-spin 0.8s linear infinite;
+}
+
+@keyframes admin-services-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+  .admin-services {
+    padding: 24px 18px;
+  }
+
+  .admin-services__header {
+    align-items: flex-start;
+
+    flex-direction: column;
+  }
+
+  .admin-services__actions {
+    width: 100%;
+  }
+
+  .admin-services__actions .admin-services__button {
+    flex: 1;
+  }
+
+  .admin-services__card {
+    align-items: flex-start;
+
+    flex-wrap: wrap;
+  }
+
+  .admin-services__content {
+    width: calc(100% - 80px);
+  }
+
+  .admin-services__service-actions {
+    width: 100%;
+
+    padding-top: 12px;
+
+    border-top: 1px solid var(--border);
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-services {
+    padding: 18px 12px;
+  }
+
+  .admin-services__title {
+    font-size: 22px;
+  }
+
+  .admin-services__subtitle {
+    font-size: 12px;
+  }
+
+  .admin-services__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-services__field--full {
+    grid-column: auto;
+  }
+
+  .admin-services__modal {
+    border-radius: 18px;
+  }
+
+  .admin-services__form {
+    padding: 18px;
+  }
+
+  .admin-services__modal-header {
+    padding: 18px;
+  }
+
+  .admin-services__form-footer {
+    flex-direction: column-reverse;
+  }
+
+  .admin-services__form-footer .admin-services__button {
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+.admin-services__overlay::-webkit-scrollbar {
+  width: 8px;
+}
+
+.admin-services__overlay::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-services__overlay::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+
+  background:
+    color-mix(in srgb, var(--primary) 30%, transparent);
+}
+
+.admin-services__overlay::-webkit-scrollbar-thumb:hover {
+  background:
+    color-mix(in srgb, var(--primary) 50%, transparent);
+}
