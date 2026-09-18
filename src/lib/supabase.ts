@@ -8,18 +8,10 @@ export const isSupabaseConfigured =
 
 if (!isSupabaseConfigured) {
   console.warn(
-    "[Jonash.dev] Supabase não configurado. " +
-      "Verifique VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY."
+    "[Jonash.dev] Supabase não configurado. Verifique as variáveis de ambiente."
   );
 }
 
-/**
- * Cliente Supabase principal.
- *
- * Mantemos o tipo do cliente estável para que as páginas
- * existentes não precisem fazer `if (!supabase)` em todas
- * as consultas.
- */
 export const supabase = createClient(
   supabaseUrl || "https://placeholder.supabase.co",
   supabaseAnonKey || "placeholder-anon-key"
