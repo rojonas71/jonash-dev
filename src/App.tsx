@@ -1,158 +1,204 @@
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes } from "react-router-dom";
 
-import PublicLayout from './components/PublicLayout';
-import AdminLayout from './components/AdminLayout';
-import ProtectedAdminRoute from './components/ProtectedAdminRoute';
+import PublicLayout from "./components/PublicLayout";
+import AdminLayout from "./components/AdminLayout";
+import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+import MaintenanceGuard from "./components/MaintenanceGuard";
+import SiteMeta from "./components/SiteMeta";
+import { SiteSettingsProvider } from "./contexts/SiteSettingsContext";
 
-import Home from './pages/Home';
-import About from './pages/About';
-import Projects from './pages/Projects';
-import ProjectDetails from './pages/ProjectDetails';
-import Technologies from './pages/Technologies';
-import Journey from './pages/Journey';
-import Studies from './pages/Studies';
-import Certificates from './pages/Certificates';
-import Content from './pages/Content';
-import PostDetails from './pages/PostDetails';
-import Gallery from './pages/Gallery';
-import Services from './pages/Services';
-import Contact from './pages/Contact';
-import NotFound from './pages/NotFound';
+import Home from "./pages/Home";
+import About from "./pages/About";
+import Projects from "./pages/Projects";
+import ProjectDetails from "./pages/ProjectDetails";
+import Technologies from "./pages/Technologies";
+import Journey from "./pages/Journey";
+import Studies from "./pages/Studies";
+import Certificates from "./pages/Certificates";
+import Content from "./pages/Content";
+import PostDetails from "./pages/PostDetails";
+import Gallery from "./pages/Gallery";
+import Services from "./pages/Services";
+import Contact from "./pages/Contact";
+import NotFound from "./pages/NotFound";
 
-import AdminLogin from './pages/admin/AdminLogin';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import AdminProjects from './pages/admin/AdminProjects';
-import AdminProjectDetails from './pages/admin/AdminProjectDetails';
-import AdminTechnologies from './pages/admin/AdminTechnologies';
-import AdminJourney from './pages/admin/AdminJourney';
-import AdminEducation from './pages/admin/AdminEducation';
-import AdminCertificates from './pages/admin/AdminCertificates';
-import AdminPosts from './pages/admin/AdminPosts';
-import AdminGallery from './pages/admin/AdminGallery';
-import AdminServices from './pages/admin/AdminServices';
-import AdminMessages from './pages/admin/AdminMessages';
-import AdminSocial from './pages/admin/AdminSocial';
-import AdminSettings from './pages/admin/AdminSettings';
-import AdminAppearance from './pages/admin/AdminAppearance';
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminProjects from "./pages/admin/AdminProjects";
+import AdminProjectDetails from "./pages/admin/AdminProjectDetails";
+import AdminTechnologies from "./pages/admin/AdminTechnologies";
+import AdminJourney from "./pages/admin/AdminJourney";
+import AdminEducation from "./pages/admin/AdminEducation";
+import AdminCertificates from "./pages/admin/AdminCertificates";
+import AdminPosts from "./pages/admin/AdminPosts";
+import AdminGallery from "./pages/admin/AdminGallery";
+import AdminServices from "./pages/admin/AdminServices";
+import AdminMessages from "./pages/admin/AdminMessages";
+import AdminSocial from "./pages/admin/AdminSocial";
+import AdminSettings from "./pages/admin/AdminSettings";
+import AdminAppearance from "./pages/admin/AdminAppearance";
+import AdminSiteSettings from "./pages/admin/AdminSiteSettings";
 
 export default function App() {
   return (
-    <Routes>
+    <SiteSettingsProvider>
+      <SiteMeta />
 
-      {/* =========================
-          ÁREA PÚBLICA
-      ========================== */}
-      <Route element={<PublicLayout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/sobre" element={<About />} />
-        <Route path="/projetos" element={<Projects />} />
-        <Route path="/projetos/:slug" element={<ProjectDetails />} />
-        <Route path="/tecnologias" element={<Technologies />} />
-        <Route path="/jornada" element={<Journey />} />
-        <Route path="/estudos" element={<Studies />} />
-        <Route path="/certificados" element={<Certificates />} />
-        <Route path="/conteudos" element={<Content />} />
-        <Route path="/conteudos/:slug" element={<PostDetails />} />
-        <Route path="/galeria" element={<Gallery />} />
-        <Route path="/servicos" element={<Services />} />
-        <Route path="/contato" element={<Contact />} />
-      </Route>
+      <Routes>
+        {/* =====================================================
+            ÁREA PÚBLICA
+            ===================================================== */}
 
-      {/* =========================
-          LOGIN ADMIN
-      ========================== */}
-      <Route
-        path="/admin/login"
-        element={<AdminLogin />}
-      />
+        <Route element={<MaintenanceGuard />}>
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<Home />} />
 
-      {/* =========================
-          ÁREA ADMINISTRATIVA
-      ========================== */}
-      <Route
-        element={
-          <ProtectedAdminRoute>
-            <AdminLayout />
-          </ProtectedAdminRoute>
-        }
-      >
-        <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/sobre" element={<About />} />
 
-        <Route
-          path="/admin/projetos"
-          element={<AdminProjects />}
-        />
+            <Route path="/projetos" element={<Projects />} />
 
-        <Route
-          path="/admin/projetos/:id/conteudo"
-          element={<AdminProjectDetails />}
-        />
+            <Route
+              path="/projetos/:slug"
+              element={<ProjectDetails />}
+            />
 
-        <Route
-          path="/admin/tecnologias"
-          element={<AdminTechnologies />}
-        />
+            <Route
+              path="/tecnologias"
+              element={<Technologies />}
+            />
 
-        <Route
-          path="/admin/jornada"
-          element={<AdminJourney />}
-        />
+            <Route path="/jornada" element={<Journey />} />
+
+            <Route path="/estudos" element={<Studies />} />
+
+            <Route
+              path="/certificados"
+              element={<Certificates />}
+            />
+
+            <Route
+              path="/conteudos"
+              element={<Content />}
+            />
+
+            <Route
+              path="/conteudos/:slug"
+              element={<PostDetails />}
+            />
+
+            <Route path="/galeria" element={<Gallery />} />
+
+            <Route path="/servicos" element={<Services />} />
+
+            <Route path="/contato" element={<Contact />} />
+          </Route>
+        </Route>
+
+        {/* =====================================================
+            LOGIN ADMIN
+            ===================================================== */}
 
         <Route
-          path="/admin/estudos"
-          element={<AdminEducation />}
+          path="/admin/login"
+          element={<AdminLogin />}
         />
+
+        {/* =====================================================
+            ÁREA ADMINISTRATIVA
+            ===================================================== */}
 
         <Route
-          path="/admin/certificados"
-          element={<AdminCertificates />}
-        />
+          element={
+            <ProtectedAdminRoute>
+              <AdminLayout />
+            </ProtectedAdminRoute>
+          }
+        >
+          <Route
+            path="/admin"
+            element={<AdminDashboard />}
+          />
+
+          <Route
+            path="/admin/projetos"
+            element={<AdminProjects />}
+          />
+
+          <Route
+            path="/admin/projetos/:id/conteudo"
+            element={<AdminProjectDetails />}
+          />
+
+          <Route
+            path="/admin/tecnologias"
+            element={<AdminTechnologies />}
+          />
+
+          <Route
+            path="/admin/jornada"
+            element={<AdminJourney />}
+          />
+
+          <Route
+            path="/admin/estudos"
+            element={<AdminEducation />}
+          />
+
+          <Route
+            path="/admin/certificados"
+            element={<AdminCertificates />}
+          />
+
+          <Route
+            path="/admin/conteudos"
+            element={<AdminPosts />}
+          />
+
+          <Route
+            path="/admin/galeria"
+            element={<AdminGallery />}
+          />
+
+          <Route
+            path="/admin/servicos"
+            element={<AdminServices />}
+          />
+
+          <Route
+            path="/admin/mensagens"
+            element={<AdminMessages />}
+          />
+
+          <Route
+            path="/admin/redes"
+            element={<AdminSocial />}
+          />
+
+          <Route
+            path="/admin/configuracoes"
+            element={<AdminSettings />}
+          />
+
+          <Route
+            path="/admin/configuracoes/site"
+            element={<AdminSiteSettings />}
+          />
+
+          <Route
+            path="/admin/configuracoes/aparencia"
+            element={<AdminAppearance />}
+          />
+        </Route>
+
+        {/* =====================================================
+            404
+            ===================================================== */}
 
         <Route
-          path="/admin/conteudos"
-          element={<AdminPosts />}
+          path="*"
+          element={<NotFound />}
         />
-
-        <Route
-          path="/admin/galeria"
-          element={<AdminGallery />}
-        />
-
-        <Route
-          path="/admin/servicos"
-          element={<AdminServices />}
-        />
-
-        <Route
-          path="/admin/mensagens"
-          element={<AdminMessages />}
-        />
-
-        <Route
-          path="/admin/redes"
-          element={<AdminSocial />}
-        />
-
-        <Route
-          path="/admin/configuracoes"
-          element={<AdminSettings />}
-        />
-
-        {/* NOVA TELA: APARÊNCIA */}
-        <Route
-          path="/admin/configuracoes/aparencia"
-          element={<AdminAppearance />}
-        />
-      </Route>
-
-      {/* =========================
-          404
-      ========================== */}
-      <Route
-        path="*"
-        element={<NotFound />}
-      />
-
-    </Routes>
+      </Routes>
+    </SiteSettingsProvider>
   );
 }
