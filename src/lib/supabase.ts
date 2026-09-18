@@ -1,18 +1,19 @@
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
+const supabasePublishableKey =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
 
 export const isSupabaseConfigured =
-  Boolean(supabaseUrl) && Boolean(supabaseAnonKey);
+  Boolean(supabaseUrl) && Boolean(supabasePublishableKey);
 
 if (!isSupabaseConfigured) {
-  console.warn(
-    "[Jonash.dev] Supabase não configurado. Verifique as variáveis de ambiente."
+  console.error(
+    "[Jonash.dev] Supabase não configurado. Verifique VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY."
   );
 }
 
 export const supabase = createClient(
   supabaseUrl || "https://placeholder.supabase.co",
-  supabaseAnonKey || "placeholder-anon-key"
+  supabasePublishableKey || "placeholder-key"
 );
