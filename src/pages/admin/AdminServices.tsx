@@ -1,26 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
 import {
-  BriefcaseBusiness,
+  AlertCircle,
   Check,
+  ChevronDown,
+  ChevronUp,
   Edit3,
   Eye,
   EyeOff,
+  Loader2,
   Plus,
   Search,
   Star,
   Trash2,
   X,
-  Loader2,
-  ExternalLink,
-  Save,
 } from "lucide-react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
 type Service = {
   id: string;
   title: string;
   name: string | null;
-  slug: string | null;
+  slug: string;
   description: string | null;
   short_description: string | null;
   icon: string | null;
@@ -60,12 +60,10 @@ const categories = [
   "Tecnologia",
   "Desenvolvimento Web",
   "Aplicativos",
-  "Sistemas",
-  "SaaS",
   "Inteligência Artificial",
   "Automação",
+  "Sistemas",
   "Consultoria",
-  "Design",
   "Outros",
 ];
 
@@ -98,197 +96,202 @@ function slugify(value: string) {
     .replace(/-+/g, "-");
 }
 
+function formatDate(value: string) {
+  if (!value) return "-";
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
 export default function AdminServices() {
   const [services, setServices] = useState<Service[]>([]);
-  const [form, setForm] = useState<ServiceForm>(emptyForm);
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState<string | null>(null);
-
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-
-  const [search, setSearch] = useState("");
-
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  useEffect(() => {
-    loadServices();
-  }, []);
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("Todas");
+  const [statusFilter, setStatusFilter] = useState("Todos");
 
-  async function loadServices() {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<ServiceForm>(emptyForm);
+
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const clearMessages = () => {
+    setError("");
+    setSuccess("");
+  };
+
+  const loadServices = useCallback(async () => {
+    clearMessages();
+    setLoading(true);
+
     try {
-      setLoading(true);
-      setError("");
+      if (!supabase) {
+        setServices([]);
+        setError(
+          "Supabase não está configurado. Verifique VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY."
+        );
+        return;
+      }
 
       const { data, error: queryError } = await supabase
         .from("services")
         .select("*")
-        .order("display_order", { ascending: true })
-        .order("created_at", { ascending: false });
+        .order("display_order", {
+          ascending: true,
+        })
+        .order("created_at", {
+          ascending: false,
+        });
 
       if (queryError) {
-        throw queryError;
+        console.error("Erro ao carregar serviços:", queryError);
+        setServices([]);
+        setError(queryError.message);
+        return;
       }
 
       setServices((data ?? []) as Service[]);
-    } catch (err: any) {
-      console.error("Erro ao carregar serviços:", err);
-
-      setError(
-        err?.message ||
-          "Não foi possível carregar os serviços."
-      );
+    } catch (err) {
+      console.error("Erro inesperado ao carregar serviços:", err);
+      setServices([]);
+      setError("Não foi possível carregar os serviços.");
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    loadServices();
+  }, [loadServices]);
 
   const filteredServices = useMemo(() => {
-    const term = search.toLowerCase().trim();
-
-    if (!term) {
-      return services;
-    }
+    const normalizedSearch = search.trim().toLowerCase();
 
     return services.filter((service) => {
-      return [
-        service.title,
-        service.name,
-        service.slug,
-        service.category,
-        service.description,
-        service.short_description,
-      ]
-        .filter(Boolean)
-        .some((value) =>
-          String(value).toLowerCase().includes(term)
-        );
-    });
-  }, [services, search]);
+      const matchesSearch =
+        !normalizedSearch ||
+        service.title?.toLowerCase().includes(normalizedSearch) ||
+        service.name?.toLowerCase().includes(normalizedSearch) ||
+        service.slug?.toLowerCase().includes(normalizedSearch) ||
+        service.category?.toLowerCase().includes(normalizedSearch);
 
-  function updateField<K extends keyof ServiceForm>(
+      const matchesCategory =
+        categoryFilter === "Todas" ||
+        service.category === categoryFilter;
+
+      const matchesStatus =
+        statusFilter === "Todos" ||
+        (statusFilter === "Publicados" && service.published) ||
+        (statusFilter === "Rascunhos" && !service.published) ||
+        (statusFilter === "Destaques" && service.featured);
+
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+  }, [services, search, categoryFilter, statusFilter]);
+
+  const updateField = <K extends keyof ServiceForm>(
     field: K,
     value: ServiceForm[K]
-  ) {
+  ) => {
     setForm((current) => ({
       ...current,
       [field]: value,
     }));
-  }
+  };
 
-  function handleNameChange(value: string) {
+  const handleNameChange = (value: string) => {
     setForm((current) => ({
       ...current,
       name: value,
-      slug: editingId
-        ? current.slug
-        : slugify(value),
+      slug: editingId ? current.slug : slugify(value),
       seo_title:
         current.seo_title ||
-        `${value} | Jonash.dev`,
+        (value.trim() ? `${value.trim()} | Jonash.dev` : ""),
     }));
-  }
+  };
 
-  function handleNew() {
+  const handleNew = () => {
+    clearMessages();
     setEditingId(null);
-    setForm(emptyForm);
-    setError("");
-    setSuccess("");
-    setShowForm(true);
-  }
+    setForm({
+      ...emptyForm,
+      display_order: services.length,
+    });
+    setModalOpen(true);
+  };
 
-  function handleEdit(service: Service) {
+  const handleEdit = (service: Service) => {
+    clearMessages();
+
     setEditingId(service.id);
 
     setForm({
-      name:
-        service.name ||
-        service.title ||
-        "",
-      slug:
-        service.slug ||
-        slugify(
-          service.name ||
-            service.title ||
-            ""
-        ),
-      category:
-        service.category ||
-        "Tecnologia",
-      icon:
-        service.icon ||
-        "Code2",
-      badge:
-        service.badge ||
-        "",
-      short_description:
-        service.short_description ||
-        "",
-      description:
-        service.description ||
-        "",
-      image_url:
-        service.image_url ||
-        "",
-      cta_text:
-        service.cta_text ||
-        "Saiba mais",
-      cta_url:
-        service.cta_url ||
-        "",
-      published:
-        service.published ?? true,
-      featured:
-        service.featured ?? false,
-      display_order:
-        service.display_order ?? 0,
-      seo_title:
-        service.seo_title ||
-        `${service.title || service.name} | Jonash.dev`,
-      seo_description:
-        service.seo_description ||
-        service.short_description ||
-        "",
+      name: service.name || service.title || "",
+      slug: service.slug || "",
+      category: service.category || "Tecnologia",
+      icon: service.icon || "Code2",
+      badge: service.badge || "",
+      short_description: service.short_description || "",
+      description: service.description || "",
+      image_url: service.image_url || "",
+      cta_text: service.cta_text || "Saiba mais",
+      cta_url: service.cta_url || "",
+      published: Boolean(service.published),
+      featured: Boolean(service.featured),
+      display_order: service.display_order ?? 0,
+      seo_title: service.seo_title || "",
+      seo_description: service.seo_description || "",
     });
 
-    setError("");
-    setSuccess("");
-    setShowForm(true);
-  }
+    setModalOpen(true);
+  };
 
-  function closeForm() {
+  const closeModal = () => {
     if (saving) return;
 
-    setShowForm(false);
+    setModalOpen(false);
     setEditingId(null);
     setForm(emptyForm);
-    setError("");
-  }
+  };
 
-  function validateForm() {
-    if (!form.name.trim()) {
-      return "Informe o nome do serviço.";
+  const validateForm = () => {
+    const name = form.name.trim();
+    const slug = form.slug.trim();
+
+    if (!name) {
+      setError("Informe o nome do serviço.");
+      return false;
     }
 
-    if (!form.slug.trim()) {
-      return "Informe o slug do serviço.";
+    if (!slug) {
+      setError("Informe o slug do serviço.");
+      return false;
     }
 
     if (!form.short_description.trim()) {
-      return "Informe uma descrição curta.";
+      setError("Informe uma descrição curta.");
+      return false;
     }
 
     if (!form.description.trim()) {
-      return "Informe a descrição completa.";
+      setError("Informe a descrição completa.");
+      return false;
     }
 
-    return null;
-  }
+    return true;
+  };
 
-  async function checkSlugExists(slug: string) {
+  const checkSlugExists = async (slug: string) => {
+    if (!supabase) return false;
+
     let query = supabase
       .from("services")
       .select("id")
@@ -302,40 +305,36 @@ export default function AdminServices() {
     const { data, error: queryError } = await query;
 
     if (queryError) {
-      throw queryError;
+      console.error("Erro ao verificar slug:", queryError);
+      return false;
     }
 
-    return Boolean(data && data.length > 0);
-  }
+    return Boolean(data?.length);
+  };
 
-  async function handleSubmit(
-    event: React.FormEvent
-  ) {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
-    setError("");
-    setSuccess("");
+    clearMessages();
 
-    const validationError = validateForm();
-
-    if (validationError) {
-      setError(validationError);
+    if (!supabase) {
+      setError(
+        "Supabase não está configurado. Verifique as variáveis de ambiente."
+      );
       return;
     }
 
+    if (!validateForm()) {
+      return;
+    }
+
+    setSaving(true);
+
     try {
-      setSaving(true);
+      const normalizedName = form.name.trim();
+      const normalizedSlug = slugify(form.slug);
 
-      const normalizedName =
-        form.name.trim();
-
-      const normalizedSlug =
-        slugify(form.slug);
-
-      const slugExists =
-        await checkSlugExists(
-          normalizedSlug
-        );
+      const slugExists = await checkSlugExists(normalizedSlug);
 
       if (slugExists) {
         setError(
@@ -344,202 +343,228 @@ export default function AdminServices() {
         return;
       }
 
-      /*
-       * IMPORTANTE:
-       * A tabela services possui "title" como NOT NULL.
-       * Por isso enviamos title E name.
-       */
-
       const payload = {
+        // A tabela exige title.
         title: normalizedName,
+
+        // Mantemos name para compatibilidade com o CMS atual.
         name: normalizedName,
+
         slug: normalizedSlug,
-
-        category:
-          form.category.trim() ||
-          "Tecnologia",
-
-        icon:
-          form.icon.trim() ||
-          "Code2",
-
-        badge:
-          form.badge.trim() ||
-          null,
-
+        category: form.category.trim() || "Tecnologia",
+        icon: form.icon.trim() || "Code2",
+        badge: form.badge.trim() || null,
         short_description:
-          form.short_description.trim(),
-
-        description:
-          form.description.trim(),
-
-        image_url:
-          form.image_url.trim() ||
-          null,
-
-        cta_text:
-          form.cta_text.trim() ||
-          "Saiba mais",
-
-        cta_url:
-          form.cta_url.trim() ||
-          null,
-
-        published:
-          form.published,
-
-        featured:
-          form.featured,
-
-        display_order:
-          Number(form.display_order) || 0,
-
+          form.short_description.trim() || null,
+        description: form.description.trim() || null,
+        image_url: form.image_url.trim() || null,
+        cta_text: form.cta_text.trim() || "Saiba mais",
+        cta_url: form.cta_url.trim() || null,
+        published: Boolean(form.published),
+        featured: Boolean(form.featured),
+        display_order: Number(form.display_order) || 0,
         seo_title:
           form.seo_title.trim() ||
           `${normalizedName} | Jonash.dev`,
-
         seo_description:
           form.seo_description.trim() ||
           form.short_description.trim(),
-
         updated_at: new Date().toISOString(),
       };
 
       if (editingId) {
-        const { error: updateError } =
-          await supabase
-            .from("services")
-            .update(payload)
-            .eq("id", editingId);
+        const { error: updateError } = await supabase
+          .from("services")
+          .update(payload)
+          .eq("id", editingId);
 
         if (updateError) {
-          throw updateError;
+          console.error(
+            "Erro ao atualizar serviço:",
+            updateError
+          );
+
+          if (updateError.code === "23505") {
+            setError(
+              "Já existe um serviço com esse slug."
+            );
+          } else if (updateError.code === "23502") {
+            setError(
+              "Um campo obrigatório não foi preenchido."
+            );
+          } else if (updateError.code === "42501") {
+            setError(
+              "Você não possui permissão para atualizar serviços."
+            );
+          } else {
+            setError(updateError.message);
+          }
+
+          return;
         }
 
-        setSuccess(
-          "Serviço atualizado com sucesso."
-        );
+        setSuccess("Serviço atualizado com sucesso.");
       } else {
-        const { error: insertError } =
-          await supabase
-            .from("services")
-            .insert(payload);
+        const { error: insertError } = await supabase
+          .from("services")
+          .insert(payload);
 
         if (insertError) {
-          throw insertError;
+          console.error(
+            "Erro ao criar serviço:",
+            insertError
+          );
+
+          if (insertError.code === "23505") {
+            setError(
+              "Já existe um serviço com esse slug."
+            );
+          } else if (insertError.code === "23502") {
+            setError(
+              "Um campo obrigatório não foi preenchido."
+            );
+          } else if (insertError.code === "42501") {
+            setError(
+              "Você não possui permissão para criar serviços."
+            );
+          } else {
+            setError(insertError.message);
+          }
+
+          return;
         }
 
-        setSuccess(
-          "Serviço criado com sucesso."
-        );
+        setSuccess("Serviço criado com sucesso.");
       }
 
+      closeModal();
       await loadServices();
-
-      setShowForm(false);
-      setEditingId(null);
-      setForm(emptyForm);
-    } catch (err: any) {
-      console.error(
-        "Erro ao salvar serviço:",
-        err
-      );
-
-      if (err?.code === "23505") {
-        setError(
-          "Já existe um serviço com esse slug."
-        );
-      } else if (err?.code === "23502") {
-        setError(
-          "Um campo obrigatório do banco não foi preenchido."
-        );
-      } else if (err?.code === "42501") {
-        setError(
-          "Você não possui permissão para alterar serviços."
-        );
-      } else {
-        setError(
-          err?.message ||
-            "Não foi possível salvar o serviço."
-        );
-      }
+    } catch (err) {
+      console.error("Erro inesperado ao salvar:", err);
+      setError("Não foi possível salvar o serviço.");
     } finally {
       setSaving(false);
     }
-  }
+  };
 
-  async function handleDelete(
-    service: Service
-  ) {
-    const confirmed = window.confirm(
-      `Deseja realmente excluir o serviço "${service.title}"?\n\nEssa ação não pode ser desfeita.`
-    );
+  const handleDelete = async () => {
+    if (!deleteId) return;
 
-    if (!confirmed) {
+    if (!supabase) {
+      setError("Supabase não está configurado.");
       return;
     }
 
-    try {
-      setDeleting(service.id);
-      setError("");
-      setSuccess("");
+    setDeleteLoading(true);
+    clearMessages();
 
-      const { error: deleteError } =
-        await supabase
-          .from("services")
-          .delete()
-          .eq("id", service.id);
+    try {
+      const { error: deleteError } = await supabase
+        .from("services")
+        .delete()
+        .eq("id", deleteId);
 
       if (deleteError) {
-        throw deleteError;
+        console.error(
+          "Erro ao excluir serviço:",
+          deleteError
+        );
+
+        if (deleteError.code === "42501") {
+          setError(
+            "Você não possui permissão para excluir serviços."
+          );
+        } else {
+          setError(deleteError.message);
+        }
+
+        return;
+      }
+
+      setDeleteId(null);
+      setSuccess("Serviço excluído com sucesso.");
+
+      await loadServices();
+    } catch (err) {
+      console.error("Erro inesperado ao excluir:", err);
+      setError("Não foi possível excluir o serviço.");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const togglePublished = async (service: Service) => {
+    if (!supabase) {
+      setError("Supabase não está configurado.");
+      return;
+    }
+
+    clearMessages();
+
+    try {
+      const { error: updateError } = await supabase
+        .from("services")
+        .update({
+          published: !service.published,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", service.id);
+
+      if (updateError) {
+        console.error(
+          "Erro ao alterar publicação:",
+          updateError
+        );
+        setError(updateError.message);
+        return;
       }
 
       setServices((current) =>
-        current.filter(
-          (item) =>
-            item.id !== service.id
+        current.map((item) =>
+          item.id === service.id
+            ? {
+                ...item,
+                published: !service.published,
+              }
+            : item
         )
       );
 
       setSuccess(
-        "Serviço excluído com sucesso."
+        service.published
+          ? "Serviço retirado da publicação."
+          : "Serviço publicado com sucesso."
       );
-    } catch (err: any) {
-      console.error(
-        "Erro ao excluir serviço:",
-        err
-      );
-
-      setError(
-        err?.message ||
-          "Não foi possível excluir o serviço."
-      );
-    } finally {
-      setDeleting(null);
+    } catch (err) {
+      console.error(err);
+      setError("Não foi possível alterar a publicação.");
     }
-  }
+  };
 
-  async function togglePublished(
-    service: Service
-  ) {
+  const toggleFeatured = async (service: Service) => {
+    if (!supabase) {
+      setError("Supabase não está configurado.");
+      return;
+    }
+
+    clearMessages();
+
     try {
-      setError("");
-
-      const newValue =
-        !service.published;
-
-      const { error: updateError } =
-        await supabase
-          .from("services")
-          .update({
-            published: newValue,
-            updated_at:
-              new Date().toISOString(),
-          })
-          .eq("id", service.id);
+      const { error: updateError } = await supabase
+        .from("services")
+        .update({
+          featured: !service.featured,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", service.id);
 
       if (updateError) {
-        throw updateError;
+        console.error(
+          "Erro ao alterar destaque:",
+          updateError
+        );
+        setError(updateError.message);
+        return;
       }
 
       setServices((current) =>
@@ -547,790 +572,699 @@ export default function AdminServices() {
           item.id === service.id
             ? {
                 ...item,
-                published: newValue,
+                featured: !service.featured,
               }
             : item
         )
       );
-    } catch (err: any) {
+
+      setSuccess(
+        service.featured
+          ? "Serviço removido dos destaques."
+          : "Serviço adicionado aos destaques."
+      );
+    } catch (err) {
       console.error(err);
-
-      setError(
-        err?.message ||
-          "Não foi possível alterar a publicação."
-      );
+      setError("Não foi possível alterar o destaque.");
     }
-  }
-
-  async function toggleFeatured(
-    service: Service
-  ) {
-    try {
-      setError("");
-
-      const newValue =
-        !service.featured;
-
-      const { error: updateError } =
-        await supabase
-          .from("services")
-          .update({
-            featured: newValue,
-            updated_at:
-              new Date().toISOString(),
-          })
-          .eq("id", service.id);
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      setServices((current) =>
-        current.map((item) =>
-          item.id === service.id
-            ? {
-                ...item,
-                featured: newValue,
-              }
-            : item
-        )
-      );
-    } catch (err: any) {
-      console.error(err);
-
-      setError(
-        err?.message ||
-          "Não foi possível alterar o destaque."
-      );
-    }
-  }
+  };
 
   return (
     <div className="admin-services">
-      {/* =====================================================
-          HEADER
-          ===================================================== */}
+      <header className="admin-page-header">
+        <div>
+          <span className="admin-page-header__eyebrow">
+            CMS • Serviços
+          </span>
 
-      <header className="admin-services__header">
-        <div className="admin-services__title-wrapper">
-          <div className="admin-services__icon">
-            <BriefcaseBusiness size={22} />
-          </div>
+          <h1>Serviços</h1>
 
-          <div>
-            <h1 className="admin-services__title">
-              Serviços
-            </h1>
-
-            <p className="admin-services__subtitle">
-              Gerencie os serviços apresentados no
-              Jonash.dev.
-            </p>
-          </div>
+          <p>
+            Gerencie os serviços apresentados no Jonash.dev.
+          </p>
         </div>
 
-        <div className="admin-services__actions">
-          <button
-            type="button"
-            className="admin-services__button admin-services__button--primary"
-            onClick={handleNew}
-          >
-            <Plus size={17} />
-            Novo serviço
-          </button>
-        </div>
+        <button
+          type="button"
+          className="admin-btn admin-btn--primary"
+          onClick={handleNew}
+        >
+          <Plus size={18} />
+          Novo serviço
+        </button>
       </header>
 
-      {/* =====================================================
-          ALERTS
-          ===================================================== */}
-
       {error && (
-        <div className="admin-services__alert admin-services__alert--error">
-          <X size={18} />
-          <span>{error}</span>
+        <div className="admin-alert admin-alert--error">
+          <AlertCircle size={18} />
+
+          <div>
+            <strong>Erro</strong>
+            <p>{error}</p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setError("")}
+            aria-label="Fechar erro"
+          >
+            <X size={18} />
+          </button>
         </div>
       )}
 
       {success && (
-        <div className="admin-services__alert admin-services__alert--success">
+        <div className="admin-alert admin-alert--success">
           <Check size={18} />
-          <span>{success}</span>
-        </div>
-      )}
 
-      {/* =====================================================
-          SEARCH
-          ===================================================== */}
-
-      <div className="admin-services__search">
-        <Search
-          size={18}
-          className="admin-services__search-icon"
-        />
-
-        <input
-          type="search"
-          placeholder="Buscar serviço por nome, categoria ou slug..."
-          value={search}
-          onChange={(event) =>
-            setSearch(event.target.value)
-          }
-        />
-      </div>
-
-      {/* =====================================================
-          LIST
-          ===================================================== */}
-
-      {loading ? (
-        <div className="admin-services__loading">
-          <div className="admin-services__spinner" />
-        </div>
-      ) : filteredServices.length === 0 ? (
-        <div className="admin-services__empty">
-          <div className="admin-services__empty-icon">
-            <BriefcaseBusiness size={25} />
+          <div>
+            <strong>Sucesso</strong>
+            <p>{success}</p>
           </div>
 
-          <h2 className="admin-services__empty-title">
-            {search
-              ? "Nenhum serviço encontrado"
-              : "Nenhum serviço cadastrado"}
-          </h2>
-
-          <p className="admin-services__empty-description">
-            {search
-              ? "Tente pesquisar por outro termo."
-              : "Comece cadastrando o primeiro serviço do Jonash.dev."}
-          </p>
-
-          {!search && (
-            <button
-              type="button"
-              className="admin-services__button admin-services__button--primary"
-              style={{
-                marginTop: 18,
-              }}
-              onClick={handleNew}
-            >
-              <Plus size={17} />
-              Criar primeiro serviço
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="admin-services__list">
-          {filteredServices.map(
-            (service) => (
-              <article
-                key={service.id}
-                className="admin-services__card"
-              >
-                {/* Icon */}
-                <div className="admin-services__service-icon">
-                  <BriefcaseBusiness size={21} />
-                </div>
-
-                {/* Content */}
-                <div className="admin-services__content">
-                  <h2 className="admin-services__service-title">
-                    {service.title ||
-                      service.name}
-                  </h2>
-
-                  <p className="admin-services__description">
-                    {service.short_description ||
-                      service.description ||
-                      "Sem descrição."}
-                  </p>
-
-                  <div className="admin-services__meta">
-                    {service.category && (
-                      <span className="admin-services__badge admin-services__badge--category">
-                        {service.category}
-                      </span>
-                    )}
-
-                    {service.published ? (
-                      <span className="admin-services__badge admin-services__badge--published">
-                        <Check
-                          size={11}
-                          style={{
-                            marginRight: 4,
-                          }}
-                        />
-                        Publicado
-                      </span>
-                    ) : (
-                      <span className="admin-services__badge admin-services__badge--hidden">
-                        <EyeOff
-                          size={11}
-                          style={{
-                            marginRight: 4,
-                          }}
-                        />
-                        Oculto
-                      </span>
-                    )}
-
-                    {service.featured && (
-                      <span className="admin-services__badge admin-services__badge--featured">
-                        <Star
-                          size={11}
-                          style={{
-                            marginRight: 4,
-                          }}
-                        />
-                        Destaque
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="admin-services__service-actions">
-                  <button
-                    type="button"
-                    className="admin-services__icon-button"
-                    title={
-                      service.published
-                        ? "Ocultar serviço"
-                        : "Publicar serviço"
-                    }
-                    onClick={() =>
-                      togglePublished(service)
-                    }
-                  >
-                    {service.published ? (
-                      <Eye size={16} />
-                    ) : (
-                      <EyeOff size={16} />
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    className="admin-services__icon-button"
-                    title={
-                      service.featured
-                        ? "Remover destaque"
-                        : "Destacar serviço"
-                    }
-                    onClick={() =>
-                      toggleFeatured(service)
-                    }
-                  >
-                    <Star
-                      size={16}
-                      fill={
-                        service.featured
-                          ? "currentColor"
-                          : "none"
-                      }
-                    />
-                  </button>
-
-                  {service.cta_url && (
-                    <a
-                      href={service.cta_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="admin-services__icon-button"
-                      title="Abrir link"
-                    >
-                      <ExternalLink
-                        size={16}
-                      />
-                    </a>
-                  )}
-
-                  <button
-                    type="button"
-                    className="admin-services__icon-button"
-                    title="Editar serviço"
-                    onClick={() =>
-                      handleEdit(service)
-                    }
-                  >
-                    <Edit3 size={16} />
-                  </button>
-
-                  <button
-                    type="button"
-                    className="admin-services__icon-button admin-services__icon-button--danger"
-                    title="Excluir serviço"
-                    disabled={
-                      deleting === service.id
-                    }
-                    onClick={() =>
-                      handleDelete(service)
-                    }
-                  >
-                    {deleting === service.id ? (
-                      <Loader2
-                        size={16}
-                        className="spin"
-                      />
-                    ) : (
-                      <Trash2 size={16} />
-                    )}
-                  </button>
-                </div>
-              </article>
-            )
-          )}
+          <button
+            type="button"
+            onClick={() => setSuccess("")}
+            aria-label="Fechar mensagem"
+          >
+            <X size={18} />
+          </button>
         </div>
       )}
 
-      {/* =====================================================
-          MODAL
-          ===================================================== */}
+      <section className="admin-services__toolbar">
+        <div className="admin-search">
+          <Search size={18} />
 
-      {showForm && (
+          <input
+            type="search"
+            placeholder="Buscar serviços..."
+            value={search}
+            onChange={(event) =>
+              setSearch(event.target.value)
+            }
+          />
+        </div>
+
+        <select
+          value={categoryFilter}
+          onChange={(event) =>
+            setCategoryFilter(event.target.value)
+          }
+        >
+          <option value="Todas">Todas as categorias</option>
+
+          {categories.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={statusFilter}
+          onChange={(event) =>
+            setStatusFilter(event.target.value)
+          }
+        >
+          <option value="Todos">Todos os status</option>
+          <option value="Publicados">Publicados</option>
+          <option value="Rascunhos">Rascunhos</option>
+          <option value="Destaques">Destaques</option>
+        </select>
+      </section>
+
+      <section className="admin-services__summary">
+        <span>
+          <strong>{services.length}</strong> serviços cadastrados
+        </span>
+
+        <span>
+          <strong>
+            {services.filter((item) => item.published).length}
+          </strong>{" "}
+          publicados
+        </span>
+
+        <span>
+          <strong>
+            {services.filter((item) => item.featured).length}
+          </strong>{" "}
+          destaques
+        </span>
+
+        <span>
+          <strong>{filteredServices.length}</strong> exibidos
+        </span>
+      </section>
+
+      <section className="admin-services__content">
+        {loading ? (
+          <div className="admin-empty-state">
+            <Loader2 className="spin" size={30} />
+
+            <h3>Carregando serviços...</h3>
+
+            <p>Aguarde enquanto buscamos os dados.</p>
+          </div>
+        ) : filteredServices.length === 0 ? (
+          <div className="admin-empty-state">
+            <AlertCircle size={30} />
+
+            <h3>
+              {services.length === 0
+                ? "Nenhum serviço cadastrado"
+                : "Nenhum resultado encontrado"}
+            </h3>
+
+            <p>
+              {services.length === 0
+                ? "Comece cadastrando o primeiro serviço."
+                : "Tente alterar os filtros ou a busca."}
+            </p>
+
+            {services.length === 0 && (
+              <button
+                type="button"
+                className="admin-btn admin-btn--primary"
+                onClick={handleNew}
+              >
+                <Plus size={18} />
+                Criar primeiro serviço
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="admin-services__table-wrapper">
+            <table className="admin-services__table">
+              <thead>
+                <tr>
+                  <th>Serviço</th>
+                  <th>Categoria</th>
+                  <th>Status</th>
+                  <th>Ordem</th>
+                  <th>Atualizado</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {filteredServices.map((service) => (
+                  <tr key={service.id}>
+                    <td>
+                      <div className="admin-services__service">
+                        <div className="admin-services__icon">
+                          {service.icon || "⌘"}
+                        </div>
+
+                        <div>
+                          <strong>
+                            {service.title ||
+                              service.name ||
+                              "Sem título"}
+                          </strong>
+
+                          <span>
+                            /{service.slug}
+                          </span>
+
+                          {service.short_description && (
+                            <small>
+                              {service.short_description}
+                            </small>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>
+                      <span className="admin-badge">
+                        {service.category || "Tecnologia"}
+                      </span>
+                    </td>
+
+                    <td>
+                      <div className="admin-services__status">
+                        <button
+                          type="button"
+                          className={`status-toggle ${
+                            service.published
+                              ? "is-active"
+                              : ""
+                          }`}
+                          onClick={() =>
+                            togglePublished(service)
+                          }
+                          title={
+                            service.published
+                              ? "Despublicar"
+                              : "Publicar"
+                          }
+                        >
+                          {service.published ? (
+                            <>
+                              <Eye size={15} />
+                              Publicado
+                            </>
+                          ) : (
+                            <>
+                              <EyeOff size={15} />
+                              Rascunho
+                            </>
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          className={`featured-toggle ${
+                            service.featured
+                              ? "is-active"
+                              : ""
+                          }`}
+                          onClick={() =>
+                            toggleFeatured(service)
+                          }
+                          title={
+                            service.featured
+                              ? "Remover destaque"
+                              : "Destacar"
+                          }
+                        >
+                          <Star size={15} />
+                        </button>
+                      </div>
+                    </td>
+
+                    <td>
+                      <div className="order-control">
+                        {service.display_order}
+                      </div>
+                    </td>
+
+                    <td>
+                      <span className="admin-services__date">
+                        {formatDate(service.updated_at)}
+                      </span>
+                    </td>
+
+                    <td>
+                      <div className="admin-services__actions">
+                        <button
+                          type="button"
+                          className="admin-icon-btn"
+                          onClick={() =>
+                            handleEdit(service)
+                          }
+                          title="Editar"
+                        >
+                          <Edit3 size={17} />
+                        </button>
+
+                        <button
+                          type="button"
+                          className="admin-icon-btn admin-icon-btn--danger"
+                          onClick={() =>
+                            setDeleteId(service.id)
+                          }
+                          title="Excluir"
+                        >
+                          <Trash2 size={17} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {modalOpen && (
         <div
-          className="admin-services__overlay"
+          className="admin-modal__overlay"
           onMouseDown={(event) => {
-            if (
-              event.target ===
-              event.currentTarget
-            ) {
-              closeForm();
+            if (event.target === event.currentTarget) {
+              closeModal();
             }
           }}
         >
-          <div className="admin-services__modal">
-            <div className="admin-services__modal-header">
+          <div className="admin-modal admin-modal--large">
+            <div className="admin-modal__header">
               <div>
-                <h2 className="admin-services__modal-title">
+                <span className="admin-page-header__eyebrow">
                   {editingId
                     ? "Editar serviço"
                     : "Novo serviço"}
+                </span>
+
+                <h2>
+                  {editingId
+                    ? "Atualizar serviço"
+                    : "Criar serviço"}
                 </h2>
               </div>
 
               <button
                 type="button"
-                className="admin-services__icon-button"
-                onClick={closeForm}
+                onClick={closeModal}
                 disabled={saving}
-                title="Fechar"
+                className="admin-modal__close"
+                aria-label="Fechar"
               >
-                <X size={18} />
+                <X size={20} />
               </button>
             </div>
 
             <form
-              className="admin-services__form"
+              className="admin-modal__body"
               onSubmit={handleSubmit}
             >
-              {/* =================================================
-                  BASIC
-                  ================================================= */}
-
-              <section className="admin-services__section">
-                <h3 className="admin-services__section-title">
-                  Informações principais
-                </h3>
-
-                <div className="admin-services__grid">
-                  <div className="admin-services__field admin-services__field--full">
-                    <label className="admin-services__label">
-                      Nome *
-                    </label>
-
-                    <input
-                      className="admin-services__input"
-                      value={form.name}
-                      onChange={(event) =>
-                        handleNameChange(
-                          event.target.value
-                        )
-                      }
-                      placeholder="Ex.: Desenvolvimento de Sites"
-                    />
-                  </div>
-
-                  <div className="admin-services__field">
-                    <label className="admin-services__label">
-                      Slug *
-                    </label>
-
-                    <input
-                      className="admin-services__input"
-                      value={form.slug}
-                      onChange={(event) =>
-                        updateField(
-                          "slug",
-                          slugify(
-                            event.target.value
-                          )
-                        )
-                      }
-                      placeholder="desenvolvimento-de-sites"
-                    />
-
-                    <span className="admin-services__hint">
-                      Usado na URL do serviço.
-                    </span>
-                  </div>
-
-                  <div className="admin-services__field">
-                    <label className="admin-services__label">
-                      Categoria
-                    </label>
-
-                    <select
-                      className="admin-services__select"
-                      value={form.category}
-                      onChange={(event) =>
-                        updateField(
-                          "category",
-                          event.target.value
-                        )
-                      }
-                    >
-                      {categories.map(
-                        (category) => (
-                          <option
-                            key={category}
-                            value={category}
-                          >
-                            {category}
-                          </option>
-                        )
-                      )}
-                    </select>
-                  </div>
-
-                  <div className="admin-services__field">
-                    <label className="admin-services__label">
-                      Ícone
-                    </label>
-
-                    <input
-                      className="admin-services__input"
-                      value={form.icon}
-                      onChange={(event) =>
-                        updateField(
-                          "icon",
-                          event.target.value
-                        )
-                      }
-                      placeholder="Code2"
-                    />
-
-                    <span className="admin-services__hint">
-                      Nome do ícone utilizado pelo
-                      frontend.
-                    </span>
-                  </div>
-
-                  <div className="admin-services__field">
-                    <label className="admin-services__label">
-                      Badge
-                    </label>
-
-                    <input
-                      className="admin-services__input"
-                      value={form.badge}
-                      onChange={(event) =>
-                        updateField(
-                          "badge",
-                          event.target.value
-                        )
-                      }
-                      placeholder="Profissional"
-                    />
-                  </div>
-                </div>
-              </section>
-
-              {/* =================================================
-                  DESCRIPTION
-                  ================================================= */}
-
-              <section className="admin-services__section">
-                <h3 className="admin-services__section-title">
-                  Descrição
-                </h3>
-
-                <div className="admin-services__grid">
-                  <div className="admin-services__field admin-services__field--full">
-                    <label className="admin-services__label">
-                      Descrição curta *
-                    </label>
-
-                    <textarea
-                      className="admin-services__textarea"
-                      value={
-                        form.short_description
-                      }
-                      onChange={(event) =>
-                        updateField(
-                          "short_description",
-                          event.target.value
-                        )
-                      }
-                      placeholder="Descrição resumida do serviço..."
-                    />
-                  </div>
-
-                  <div className="admin-services__field admin-services__field--full">
-                    <label className="admin-services__label">
-                      Descrição completa *
-                    </label>
-
-                    <textarea
-                      className="admin-services__textarea"
-                      style={{
-                        minHeight: 180,
-                      }}
-                      value={form.description}
-                      onChange={(event) =>
-                        updateField(
-                          "description",
-                          event.target.value
-                        )
-                      }
-                      placeholder="Explique detalhadamente o serviço, benefícios, processo e entregas..."
-                    />
-                  </div>
-                </div>
-              </section>
-
-              {/* =================================================
-                  MEDIA
-                  ================================================= */}
-
-              <section className="admin-services__section">
-                <h3 className="admin-services__section-title">
-                  Imagem e chamada para ação
-                </h3>
-
-                <div className="admin-services__grid">
-                  <div className="admin-services__field admin-services__field--full">
-                    <label className="admin-services__label">
-                      URL da imagem
-                    </label>
-
-                    <input
-                      type="url"
-                      className="admin-services__input"
-                      value={form.image_url}
-                      onChange={(event) =>
-                        updateField(
-                          "image_url",
-                          event.target.value
-                        )
-                      }
-                      placeholder="https://..."
-                    />
-                  </div>
-
-                  <div className="admin-services__field">
-                    <label className="admin-services__label">
-                      Texto do botão
-                    </label>
-
-                    <input
-                      className="admin-services__input"
-                      value={form.cta_text}
-                      onChange={(event) =>
-                        updateField(
-                          "cta_text",
-                          event.target.value
-                        )
-                      }
-                      placeholder="Saiba mais"
-                    />
-                  </div>
-
-                  <div className="admin-services__field">
-                    <label className="admin-services__label">
-                      URL do botão
-                    </label>
-
-                    <input
-                      type="url"
-                      className="admin-services__input"
-                      value={form.cta_url}
-                      onChange={(event) =>
-                        updateField(
-                          "cta_url",
-                          event.target.value
-                        )
-                      }
-                      placeholder="https://..."
-                    />
-                  </div>
-                </div>
-              </section>
-
-              {/* =================================================
-                  PUBLISH
-                  ================================================= */}
-
-              <section className="admin-services__section">
-                <h3 className="admin-services__section-title">
-                  Publicação
-                </h3>
-
-                <div className="admin-services__grid">
-                  <label className="admin-services__checkbox">
-                    <input
-                      type="checkbox"
-                      checked={form.published}
-                      onChange={(event) =>
-                        updateField(
-                          "published",
-                          event.target.checked
-                        )
-                      }
-                    />
-
-                    <span>
-                      <span className="admin-services__checkbox-title">
-                        Publicado
-                      </span>
-
-                      <span className="admin-services__checkbox-description">
-                        Exibir este serviço no
-                        site público.
-                      </span>
-                    </span>
+              <div className="admin-form-grid">
+                <div className="admin-form-field admin-form-field--full">
+                  <label htmlFor="service-name">
+                    Nome do serviço *
                   </label>
 
-                  <label className="admin-services__checkbox">
-                    <input
-                      type="checkbox"
-                      checked={form.featured}
-                      onChange={(event) =>
-                        updateField(
-                          "featured",
-                          event.target.checked
-                        )
-                      }
-                    />
+                  <input
+                    id="service-name"
+                    type="text"
+                    value={form.name}
+                    onChange={(event) =>
+                      handleNameChange(event.target.value)
+                    }
+                    placeholder="Ex.: Desenvolvimento de Sites"
+                    required
+                  />
+                </div>
 
-                    <span>
-                      <span className="admin-services__checkbox-title">
-                        Destaque
-                      </span>
-
-                      <span className="admin-services__checkbox-description">
-                        Marcar como serviço
-                        destacado.
-                      </span>
-                    </span>
+                <div className="admin-form-field">
+                  <label htmlFor="service-slug">
+                    Slug *
                   </label>
 
-                  <div className="admin-services__field">
-                    <label className="admin-services__label">
-                      Ordem
-                    </label>
-
-                    <input
-                      type="number"
-                      className="admin-services__input"
-                      value={
-                        form.display_order
-                      }
-                      onChange={(event) =>
-                        updateField(
-                          "display_order",
-                          Number(
-                            event.target.value
-                          )
-                        )
-                      }
-                      min={0}
-                    />
-                  </div>
+                  <input
+                    id="service-slug"
+                    type="text"
+                    value={form.slug}
+                    onChange={(event) =>
+                      updateField(
+                        "slug",
+                        slugify(event.target.value)
+                      )
+                    }
+                    placeholder="desenvolvimento-de-sites"
+                    required
+                  />
                 </div>
-              </section>
 
-              {/* =================================================
-                  SEO
-                  ================================================= */}
+                <div className="admin-form-field">
+                  <label htmlFor="service-category">
+                    Categoria
+                  </label>
 
-              <section className="admin-services__section">
-                <h3 className="admin-services__section-title">
-                  SEO
-                </h3>
-
-                <div className="admin-services__grid">
-                  <div className="admin-services__field admin-services__field--full">
-                    <label className="admin-services__label">
-                      Título SEO
-                    </label>
-
-                    <input
-                      className="admin-services__input"
-                      value={form.seo_title}
-                      onChange={(event) =>
-                        updateField(
-                          "seo_title",
-                          event.target.value
-                        )
-                      }
-                      placeholder="Título para mecanismos de busca..."
-                    />
-                  </div>
-
-                  <div className="admin-services__field admin-services__field--full">
-                    <label className="admin-services__label">
-                      Descrição SEO
-                    </label>
-
-                    <textarea
-                      className="admin-services__textarea"
-                      value={
-                        form.seo_description
-                      }
-                      onChange={(event) =>
-                        updateField(
-                          "seo_description",
-                          event.target.value
-                        )
-                      }
-                      placeholder="Descrição para Google e redes sociais..."
-                    />
-                  </div>
+                  <select
+                    id="service-category"
+                    value={form.category}
+                    onChange={(event) =>
+                      updateField(
+                        "category",
+                        event.target.value
+                      )
+                    }
+                  >
+                    {categories.map((category) => (
+                      <option
+                        key={category}
+                        value={category}
+                      >
+                        {category}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              </section>
 
-              {/* =================================================
-                  FOOTER
-                  ================================================= */}
+                <div className="admin-form-field">
+                  <label htmlFor="service-icon">
+                    Ícone
+                  </label>
 
-              <div className="admin-services__form-footer">
+                  <input
+                    id="service-icon"
+                    type="text"
+                    value={form.icon}
+                    onChange={(event) =>
+                      updateField(
+                        "icon",
+                        event.target.value
+                      )
+                    }
+                    placeholder="Code2"
+                  />
+                </div>
+
+                <div className="admin-form-field">
+                  <label htmlFor="service-badge">
+                    Badge
+                  </label>
+
+                  <input
+                    id="service-badge"
+                    type="text"
+                    value={form.badge}
+                    onChange={(event) =>
+                      updateField(
+                        "badge",
+                        event.target.value
+                      )
+                    }
+                    placeholder="Popular"
+                  />
+                </div>
+
+                <div className="admin-form-field admin-form-field--full">
+                  <label htmlFor="service-short-description">
+                    Descrição curta *
+                  </label>
+
+                  <input
+                    id="service-short-description"
+                    type="text"
+                    value={form.short_description}
+                    onChange={(event) =>
+                      updateField(
+                        "short_description",
+                        event.target.value
+                      )
+                    }
+                    placeholder="Descrição resumida do serviço"
+                    required
+                  />
+                </div>
+
+                <div className="admin-form-field admin-form-field--full">
+                  <label htmlFor="service-description">
+                    Descrição completa *
+                  </label>
+
+                  <textarea
+                    id="service-description"
+                    rows={7}
+                    value={form.description}
+                    onChange={(event) =>
+                      updateField(
+                        "description",
+                        event.target.value
+                      )
+                    }
+                    placeholder="Explique detalhadamente o serviço..."
+                    required
+                  />
+                </div>
+
+                <div className="admin-form-field">
+                  <label htmlFor="service-image">
+                    URL da imagem
+                  </label>
+
+                  <input
+                    id="service-image"
+                    type="url"
+                    value={form.image_url}
+                    onChange={(event) =>
+                      updateField(
+                        "image_url",
+                        event.target.value
+                      )
+                    }
+                    placeholder="https://..."
+                  />
+                </div>
+
+                <div className="admin-form-field">
+                  <label htmlFor="service-order">
+                    Ordem
+                  </label>
+
+                  <input
+                    id="service-order"
+                    type="number"
+                    min="0"
+                    value={form.display_order}
+                    onChange={(event) =>
+                      updateField(
+                        "display_order",
+                        Number(event.target.value)
+                      )
+                    }
+                  />
+                </div>
+
+                <div className="admin-form-field">
+                  <label htmlFor="service-cta-text">
+                    Texto do botão
+                  </label>
+
+                  <input
+                    id="service-cta-text"
+                    type="text"
+                    value={form.cta_text}
+                    onChange={(event) =>
+                      updateField(
+                        "cta_text",
+                        event.target.value
+                      )
+                    }
+                    placeholder="Saiba mais"
+                  />
+                </div>
+
+                <div className="admin-form-field">
+                  <label htmlFor="service-cta-url">
+                    URL do botão
+                  </label>
+
+                  <input
+                    id="service-cta-url"
+                    type="url"
+                    value={form.cta_url}
+                    onChange={(event) =>
+                      updateField(
+                        "cta_url",
+                        event.target.value
+                      )
+                    }
+                    placeholder="https://..."
+                  />
+                </div>
+
+                <div className="admin-form-field admin-form-field--full">
+                  <label htmlFor="service-seo-title">
+                    SEO Title
+                  </label>
+
+                  <input
+                    id="service-seo-title"
+                    type="text"
+                    value={form.seo_title}
+                    onChange={(event) =>
+                      updateField(
+                        "seo_title",
+                        event.target.value
+                      )
+                    }
+                    placeholder="Título para mecanismos de busca"
+                  />
+                </div>
+
+                <div className="admin-form-field admin-form-field--full">
+                  <label htmlFor="service-seo-description">
+                    SEO Description
+                  </label>
+
+                  <textarea
+                    id="service-seo-description"
+                    rows={4}
+                    value={form.seo_description}
+                    onChange={(event) =>
+                      updateField(
+                        "seo_description",
+                        event.target.value
+                      )
+                    }
+                    placeholder="Descrição para mecanismos de busca"
+                  />
+                </div>
+              </div>
+
+              <div className="admin-form-options">
+                <label className="admin-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={form.published}
+                    onChange={(event) =>
+                      updateField(
+                        "published",
+                        event.target.checked
+                      )
+                    }
+                  />
+
+                  <span>
+                    <strong>Publicado</strong>
+                    <small>
+                      Exibir este serviço no site.
+                    </small>
+                  </span>
+                </label>
+
+                <label className="admin-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={form.featured}
+                    onChange={(event) =>
+                      updateField(
+                        "featured",
+                        event.target.checked
+                      )
+                    }
+                  />
+
+                  <span>
+                    <strong>Destacado</strong>
+                    <small>
+                      Marcar como serviço em destaque.
+                    </small>
+                  </span>
+                </label>
+              </div>
+
+              <div className="admin-modal__footer">
                 <button
                   type="button"
-                  className="admin-services__button"
-                  onClick={closeForm}
+                  className="admin-btn admin-btn--secondary"
+                  onClick={closeModal}
                   disabled={saving}
                 >
-                  <X size={16} />
                   Cancelar
                 </button>
 
                 <button
                   type="submit"
-                  className="admin-services__button admin-services__button--primary"
+                  className="admin-btn admin-btn--primary"
                   disabled={saving}
                 >
                   {saving ? (
                     <>
                       <Loader2
-                        size={16}
+                        size={18}
                         className="spin"
                       />
                       Salvando...
                     </>
                   ) : (
                     <>
-                      <Save size={16} />
+                      <Check size={18} />
                       {editingId
                         ? "Salvar alterações"
                         : "Criar serviço"}
@@ -1339,6 +1273,76 @@ export default function AdminServices() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {deleteId && (
+        <div className="admin-modal__overlay">
+          <div className="admin-modal admin-modal--small">
+            <div className="admin-modal__header">
+              <div>
+                <span className="admin-page-header__eyebrow">
+                  Atenção
+                </span>
+
+                <h2>Excluir serviço?</h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setDeleteId(null)}
+                disabled={deleteLoading}
+                className="admin-modal__close"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="admin-modal__body">
+              <div className="admin-delete-warning">
+                <Trash2 size={30} />
+
+                <p>
+                  Esta ação excluirá o serviço
+                  permanentemente. Essa operação não pode ser
+                  desfeita.
+                </p>
+              </div>
+            </div>
+
+            <div className="admin-modal__footer">
+              <button
+                type="button"
+                className="admin-btn admin-btn--secondary"
+                onClick={() => setDeleteId(null)}
+                disabled={deleteLoading}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className="admin-btn admin-btn--danger"
+                onClick={handleDelete}
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? (
+                  <>
+                    <Loader2
+                      size={18}
+                      className="spin"
+                    />
+                    Excluindo...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={18} />
+                    Excluir definitivamente
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

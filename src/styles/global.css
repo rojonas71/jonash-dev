@@ -3040,3 +3040,28 @@ footer span {
     transform: rotate(360deg);
   }
 }
+
+.supabase-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.08);
+  color: #fbbf24;
+}
+
+.supabase-status strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #fff;
+}
+
+.supabase-status p {
+  margin: 0;
+  color: #a1a1aa;
+  font-size: 14px;
+  line-height: 1.5;
+}

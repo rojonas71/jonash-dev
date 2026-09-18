@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
@@ -6,20 +6,21 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim();
 export const isSupabaseConfigured =
   Boolean(supabaseUrl) && Boolean(supabaseAnonKey);
 
-let supabase: SupabaseClient | null = null;
-
-if (isSupabaseConfigured) {
-  supabase = createClient(supabaseUrl!, supabaseAnonKey!);
+if (!isSupabaseConfigured) {
+  console.warn(
+    "[Jonash.dev] Supabase não configurado. " +
+      "Verifique VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY."
+  );
 }
 
-export { supabase };
-
-export function requireSupabase(): SupabaseClient {
-  if (!supabase) {
-    throw new Error(
-      "Supabase não configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY."
-    );
-  }
-
-  return supabase;
-}
+/**
+ * Cliente Supabase principal.
+ *
+ * Mantemos o tipo do cliente estável para que as páginas
+ * existentes não precisem fazer `if (!supabase)` em todas
+ * as consultas.
+ */
+export const supabase = createClient(
+  supabaseUrl || "https://placeholder.supabase.co",
+  supabaseAnonKey || "placeholder-anon-key"
+);
